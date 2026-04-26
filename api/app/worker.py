@@ -2,6 +2,7 @@ from celery import Celery
 from app.chaos import chaos_task
 from app.logger import log_message
 from celery.schedules import schedule
+from app.chaos import get_chaos_state
 
 celery = Celery(
     "worker",
@@ -11,6 +12,9 @@ celery = Celery(
 
 @celery.task(bind=True, autoretry_for=(Exception,), retry_backoff=2, retry_kwargs={"max_retries": 3})
 def run_mission(self, mission_id):
+    if not get_chaos_state():
+        log_message(mission_id, "Skipped (chaos stopped)")
+        return
     log_message(mission_id, "Started mission")
 
     try:
