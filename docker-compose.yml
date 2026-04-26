@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  api:
+    build: ./api
+    container_name: stormforge_api
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./shared/logs:/app/logs
+      - ./shared/files:/app/files
+    depends_on:
+      - redis
+
+  worker:
+    build: ./api
+    container_name: stormforge_worker
+    command: celery -A app.worker worker --loglevel=info
+    volumes:
+      - ./shared/logs:/app/logs
+      - ./shared/files:/app/files
+    depends_on:
+      - redis
+
+  beat:
+    build: ./api
+    container_name: stormforge_beat
+    command: celery -A app.worker beat --loglevel=info
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: stormforge_redis
+
+volumes:
+  logs:
+  files:
