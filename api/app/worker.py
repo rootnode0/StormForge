@@ -24,11 +24,18 @@ def run_mission(self, mission_id):
         log_message(mission_id, f"Error: {str(e)}")
         raise
 
+@celery.task
+def scheduled_mission():
+    from app.chaos import get_chaos_state
+
+    if not get_chaos_state():
+        return
+
+    run_mission.delay("internal-")
 
 celery.conf.beat_schedule = {
     "internal-chaos": {
-        "task": "app.worker.run_mission",
+        "task": "app.worker.scheduled_mission",
         "schedule": 5.0,
-        "args": ("internal-" ,)
     }
 }
